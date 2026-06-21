@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>🎮 Class Game Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *,*::before,*::after { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+    min-height: 100vh;
+    color: #2d3748;
+    padding: 32px 16px;
+  }
+  .container { max-width: 980px; margin: 0 auto; }
+  .header { text-align: center; color: white; margin-bottom: 40px; }
+  .header h1 {
+    font-size: clamp(34px, 6vw, 54px);
+    font-weight: 900;
+    letter-spacing: -1px;
+    text-shadow: 0 4px 16px rgba(0,0,0,0.25);
+  }
+  .header p { opacity: 0.95; margin-top: 10px; font-size: 16px; }
+
+  .games {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 24px;
+  }
+
+  .game-card {
+    background: white;
+    border-radius: 24px;
+    padding: 32px 28px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.22);
+    text-decoration: none;
+    color: inherit;
+    transition: all 0.25s;
+    position: relative;
+    overflow: hidden;
+  }
+  .game-card:hover {
+    transform: translateY(-8px);
+    box-shadow: 0 32px 80px rgba(0,0,0,0.32);
+  }
+  .game-card .top-band {
+    position: absolute;
+    top: 0; left: 0; right: 0;
+    height: 7px;
+  }
+  .game-card.bingo .top-band { background: linear-gradient(90deg, #667eea, #764ba2); }
+  .game-card.quiz  .top-band { background: linear-gradient(90deg, #4facfe, #00f2fe); }
+
+  .game-icon { font-size: 64px; margin-bottom: 14px; line-height: 1; }
+  .game-title {
+    font-size: 24px;
+    font-weight: 900;
+    margin-bottom: 10px;
+    letter-spacing: -0.5px;
+  }
+  .game-desc {
+    color: #4a5568;
+    font-size: 14px;
+    line-height: 1.65;
+    margin-bottom: 18px;
+  }
+  .game-flow {
+    background: #f7fafc;
+    border-left: 4px solid #cbd5e0;
+    padding: 12px 14px;
+    border-radius: 0 10px 10px 0;
+    font-size: 13px;
+    color: #2d3748;
+    line-height: 1.7;
+    margin-bottom: 16px;
+  }
+  .game-card.bingo .game-flow { border-left-color: #667eea; }
+  .game-card.quiz  .game-flow { border-left-color: #4facfe; }
+  .game-flow b { color: #1a202c; }
+
+  .game-tags { display: flex; gap: 6px; flex-wrap: wrap; }
+  .tag {
+    font-size: 11px;
+    padding: 4px 12px;
+    border-radius: 100px;
+    background: #edf2f7;
+    color: #4a5568;
+    font-weight: 700;
+  }
+  .tag.b1 { background: #ede9fe; color: #5b21b6; }
+  .tag.b2 { background: #cffafe; color: #155e75; }
+  .tag.new { background: #fef3c7; color: #b45309; }
+
+  .footer {
+    text-align: center;
+    color: rgba(255,255,255,0.85);
+    margin-top: 48px;
+    font-size: 13px;
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🎮 Class Game Studio</h1>
+    <p>실시간 멀티플레이어 수업용 빙고 게임 모음</p>
+  </div>
+
+  <div class="games">
+    <a href="/bingo_game.html" class="game-card bingo">
+      <div class="top-band"></div>
+      <div class="game-icon">🎯</div>
+      <div class="game-title">그림보고 랜덤 빙고 게임</div>
+      <div class="game-desc">
+        선생님이 그림을 보여주면 학생이 빙고판에서 같은 단어를 찾아 클릭하는 게임.
+      </div>
+      <div class="game-flow">
+        🧑‍🏫 선생님: <b>그림</b> 클릭 →<br>
+        🎒 학생: 빙고판의 <b>단어</b> 중 같은 것 클릭
+      </div>
+      <div class="game-tags">
+        <span class="tag b1">학생 보드 = 단어</span>
+        <span class="tag b1">출제 = 그림</span>
+      </div>
+    </a>
+
+    <a href="/quiz_game.html" class="game-card quiz">
+      <div class="top-band"></div>
+      <div class="game-icon">📚</div>
+      <div class="game-title">문제읽고 랜덤 빙고 게임</div>
+      <div class="game-desc">
+        엑셀로 만든 문제/정답 세트를 업로드. 학생은 문제를 읽고 빙고판에서 정답 그림을 클릭.
+      </div>
+      <div class="game-flow">
+        🧑‍🏫 선생님: 엑셀 업로드 → <b>문제</b> 클릭 →<br>
+        🎒 학생: 빙고판의 <b>그림</b> 중 정답 클릭
+      </div>
+      <div class="game-tags">
+        <span class="tag b2">학생 보드 = 그림</span>
+        <span class="tag b2">출제 = 문제(텍스트)</span>
+        <span class="tag new">엑셀 업로드</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="footer">
+    🏫 화성시 AI 시민리더 심화교육
+  </div>
+</div>
+</body>
+</html>

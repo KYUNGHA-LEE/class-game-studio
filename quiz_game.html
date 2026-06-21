@@ -1,0 +1,1381 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>📚 문제읽고 랜덤 빙고 게임 | Class Game Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #2d3748;
+    padding: 16px;
+  }
+  .container { max-width: 1280px; margin: 0 auto; }
+  body.student-mode .container { max-width: 1800px; }
+  body.student-mode { padding: 8px; }
+  body.student-mode .header { margin-bottom: 8px; }
+  body.student-mode .header h1 { font-size: clamp(20px, 2.4vw, 28px); }
+  body.student-mode .header p { display: none; }
+  .header { text-align: center; color: white; margin-bottom: 20px; }
+  .header h1 { font-size: clamp(26px, 5vw, 42px); font-weight: 900; text-shadow: 0 4px 14px rgba(0,0,0,0.25); }
+  .header p { opacity: 0.92; margin-top: 6px; font-size: 14px; }
+
+  .card {
+    background: white;
+    border-radius: 18px;
+    padding: 22px;
+    box-shadow: 0 14px 40px rgba(0,0,0,0.18);
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    border: none;
+    padding: 11px 20px;
+    border-radius: 11px;
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.18s;
+    font-family: inherit;
+  }
+  .btn-primary { background: #6366f1; color: white; }
+  .btn-primary:hover:not(:disabled) { background: #4f46e5; transform: translateY(-2px); }
+  .btn-success { background: #10b981; color: white; }
+  .btn-success:hover:not(:disabled) { background: #059669; transform: translateY(-2px); }
+  .btn-danger { background: #ef4444; color: white; }
+  .btn-warn { background: #f59e0b; color: white; }
+  .btn-secondary { background: #e2e8f0; color: #475569; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; }
+  .btn-lg { padding: 16px 30px; font-size: 17px; }
+
+  input[type=text], input[type=password], select {
+    width: 100%;
+    padding: 12px 14px;
+    border: 2px solid #e2e8f0;
+    border-radius: 11px;
+    font-size: 15px;
+    font-family: inherit;
+    transition: border-color 0.15s;
+  }
+  input:focus, select:focus { outline: none; border-color: #6366f1; }
+
+  .role-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-top: 18px; }
+  .role-btn {
+    padding: 30px 18px;
+    border: 3px solid transparent;
+    border-radius: 16px;
+    background: #f8fafc;
+    cursor: pointer;
+    transition: all 0.2s;
+    text-align: center;
+    font-family: inherit;
+  }
+  .role-btn:hover:not(:disabled) { transform: translateY(-4px); border-color: #6366f1; background: white; box-shadow: 0 10px 24px rgba(99,102,241,0.18); }
+  .role-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+  .role-btn .ico { font-size: 42px; margin-bottom: 8px; }
+  .role-btn .lbl { font-size: 17px; font-weight: 800; color: #1e293b; }
+  .role-btn .sub { font-size: 12px; color: #64748b; margin-top: 4px; }
+
+  .toast {
+    position: fixed;
+    top: 20px;
+    left: 50%;
+    transform: translateX(-50%) translateY(-100px);
+    background: #1e293b;
+    color: white;
+    padding: 13px 22px;
+    border-radius: 999px;
+    font-weight: 700;
+    z-index: 9999;
+    transition: transform 0.3s ease;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.35);
+  }
+  .toast.show { transform: translateX(-50%) translateY(0); }
+  .toast.error { background: #dc2626; }
+  .toast.success { background: #059669; }
+
+  /* 선생님 화면 */
+  .teacher-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 900px) { .teacher-grid { grid-template-columns: 1fr; } }
+  .section-title { font-size: 17px; font-weight: 800; margin-bottom: 12px; color: #1e293b; display: flex; align-items: center; gap: 8px; }
+
+  .size-options { display: flex; gap: 8px; flex-wrap: wrap; }
+  .size-opt, .goal-opt {
+    flex: 1;
+    min-width: 60px;
+    padding: 12px 8px;
+    border: 2px solid #e2e8f0;
+    border-radius: 11px;
+    background: white;
+    cursor: pointer;
+    font-weight: 800;
+    font-size: 14px;
+    transition: all 0.15s;
+    font-family: inherit;
+  }
+  .size-opt:hover, .goal-opt:hover { border-color: #a5b4fc; }
+  .size-opt.active { background: #6366f1; color: white; border-color: #6366f1; }
+  .goal-opt.active { background: #f59e0b; color: white; border-color: #f59e0b; }
+
+  .upload-zone {
+    border: 2.5px dashed #cbd5e1;
+    border-radius: 12px;
+    padding: 22px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.15s;
+    background: #f8fafc;
+  }
+  .upload-zone:hover { border-color: #6366f1; background: #eef2ff; }
+  .upload-zone .ico { font-size: 32px; margin-bottom: 6px; }
+  .upload-zone .txt { font-size: 13px; color: #64748b; }
+  .upload-zone strong { color: #1e293b; }
+
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+    gap: 8px;
+    margin-top: 12px;
+    max-height: 180px;
+    overflow-y: auto;
+    padding: 4px;
+  }
+  .img-card {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: 8px;
+    overflow: hidden;
+    background: #f1f5f9;
+    border: 2px solid #e2e8f0;
+  }
+  .img-card img { width: 100%; height: 100%; object-fit: cover; }
+  .img-card .name {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.7);
+    color: white;
+    font-size: 10px;
+    padding: 2px 4px;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .img-card .del {
+    position: absolute;
+    top: 2px; right: 2px;
+    width: 20px; height: 20px;
+    border-radius: 50%;
+    background: rgba(239,68,68,0.9);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .question-list {
+    max-height: 360px;
+    overflow-y: auto;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    padding: 6px;
+    background: #fafafa;
+  }
+  .q-item {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 10px 12px;
+    margin-bottom: 5px;
+    border-radius: 8px;
+    background: white;
+    border: 2px solid #e2e8f0;
+    cursor: pointer;
+    transition: all 0.15s;
+  }
+  .q-item:hover { border-color: #a5b4fc; transform: translateX(2px); }
+  .q-item.called { background: #f1f5f9; opacity: 0.7; }
+  .q-item.current { border-color: #f59e0b; background: #fffbeb; box-shadow: 0 0 0 3px rgba(245,158,11,0.18); }
+  .q-item .num { font-weight: 800; color: #6366f1; min-width: 28px; }
+  .q-item .text { flex: 1; font-size: 14px; }
+  .q-item .answer { font-size: 12px; color: #64748b; }
+  .q-item .match { font-size: 18px; }
+
+  .participants {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    max-height: 100px;
+    overflow-y: auto;
+  }
+  .pchip {
+    background: #ede9fe;
+    color: #5b21b6;
+    padding: 5px 11px;
+    border-radius: 999px;
+    font-size: 13px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    gap: 5px;
+  }
+  .pchip.bingo { background: #fef3c7; color: #b45309; }
+  .pchip .dot { width: 7px; height: 7px; border-radius: 50%; background: #10b981; }
+
+  .share-link {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+    background: #f8fafc;
+    padding: 8px;
+    border-radius: 10px;
+    border: 1px solid #e2e8f0;
+  }
+  .share-link input { flex: 1; padding: 8px; font-size: 12px; border: none; background: transparent; }
+
+  /* 학생 화면 */
+  .student-layout {
+    display: grid;
+    grid-template-columns: minmax(260px, 320px) 1fr;
+    gap: 14px;
+    align-items: start;
+  }
+  .student-left {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    position: sticky;
+    top: 12px;
+  }
+  .student-info-card {
+    padding: 12px 16px !important;
+  }
+  .student-info-card .info-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 10px;
+  }
+  @media (max-width: 800px) {
+    .student-layout { grid-template-columns: 1fr; }
+    .student-left { position: static !important; }
+    .question-panel { position: static !important; }
+  }
+
+  .question-panel {
+    background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
+    border: 4px solid #f59e0b;
+    border-radius: 20px;
+    padding: clamp(14px, 1.8vw, 22px);
+    box-shadow: 0 10px 30px rgba(245,158,11,0.28);
+    overflow: hidden;
+    flex: 1;
+    min-height: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .question-panel .qtext, .question-panel .empty { flex: 1; min-height: 0; }
+  .question-panel .label {
+    font-size: clamp(12px, 1.2vw, 15px);
+    color: #b45309;
+    font-weight: 800;
+    margin-bottom: 8px;
+    letter-spacing: 0.5px;
+  }
+  .question-panel .qnum {
+    display: inline-block;
+    background: #f59e0b;
+    color: white;
+    padding: 5px 13px;
+    border-radius: 999px;
+    font-weight: 800;
+    font-size: clamp(12px, 1.2vw, 15px);
+    margin-bottom: 10px;
+  }
+  .question-panel .qtext {
+    font-size: clamp(17px, 1.6vw, 24px);
+    font-weight: 800;
+    color: #78350f;
+    line-height: 1.45;
+    word-break: keep-all;
+  }
+  .question-panel .empty {
+    color: #92400e;
+    font-style: italic;
+    font-size: clamp(14px, 1.4vw, 17px);
+    line-height: 1.5;
+  }
+
+  .bingo-board {
+    display: grid;
+    gap: clamp(5px, 0.7vw, 10px);
+    margin: 0 auto;
+  }
+  .bingo-cell {
+    background: white;
+    border-radius: 14px;
+    overflow: hidden;
+    cursor: pointer;
+    position: relative;
+    border: 3px solid #e2e8f0;
+    transition: all 0.15s;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    min-height: 0;
+    -webkit-tap-highlight-color: transparent;
+    outline: none;
+    user-select: none;
+  }
+  .bingo-cell:focus, .bingo-cell:focus-visible, .bingo-cell:active { outline: none; }
+  .bingo-cell:hover:not(.marked) { transform: scale(1.04); border-color: #6366f1; box-shadow: 0 8px 20px rgba(99,102,241,0.25); }
+  .bingo-cell img {
+    width: 100%;
+    height: 75%;
+    object-fit: contain;
+    background: #f8fafc;
+    padding: 4px;
+  }
+  .bingo-cell .word {
+    width: 100%;
+    height: 25%;
+    background: rgba(15,23,42,0.88);
+    color: white;
+    font-size: clamp(12px, 1.4vw, 18px);
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    padding: 0 6px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    letter-spacing: -0.2px;
+  }
+  .bingo-cell.marked { border-color: #10b981; background: #d1fae5; }
+  .bingo-cell.marked img { opacity: 0.55; }
+  .bingo-cell.marked::after {
+    content: '✓';
+    position: absolute;
+    top: 50%; left: 50%;
+    transform: translate(-50%, -50%);
+    font-size: clamp(50px, 10vw, 110px);
+    color: #10b981;
+    text-shadow: 0 0 14px rgba(255,255,255,0.95), 0 4px 18px rgba(0,0,0,0.4);
+    font-weight: 900;
+    pointer-events: none;
+  }
+  .bingo-cell.shake { animation: shake 0.4s; }
+  @keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(-7px); }
+    75% { transform: translateX(7px); }
+  }
+
+  /* 빙고 축하 오버레이 */
+  .celebrate {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.75);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    z-index: 9998;
+    animation: fadeIn 0.3s;
+  }
+  .celebrate.show { display: flex; }
+  .celebrate-box {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    padding: 50px 60px;
+    border-radius: 24px;
+    text-align: center;
+    color: white;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.5);
+    animation: pop 0.5s;
+  }
+  .celebrate-box h1 {
+    font-size: clamp(56px, 11vw, 90px);
+    font-weight: 900;
+    text-shadow: 0 6px 18px rgba(0,0,0,0.35);
+  }
+  .celebrate-box p { font-size: 22px; margin-top: 14px; font-weight: 700; }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes pop {
+    0% { transform: scale(0.4); opacity: 0; }
+    50% { transform: scale(1.08); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .confetti {
+    position: fixed;
+    top: -10px;
+    width: 10px;
+    height: 14px;
+    z-index: 9997;
+    animation: confettiFall linear forwards;
+    pointer-events: none;
+  }
+  @keyframes confettiFall {
+    to { transform: translateY(110vh) rotate(720deg); opacity: 0; }
+  }
+
+  .badge {
+    background: #6366f1;
+    color: white;
+    padding: 2px 9px;
+    border-radius: 999px;
+    font-size: 11px;
+    font-weight: 800;
+  }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .stack > * + * { margin-top: 12px; }
+  .small { font-size: 12px; color: #64748b; }
+  .hidden { display: none !important; }
+  .winner-banner {
+    background: linear-gradient(135deg, #fbbf24, #f59e0b);
+    color: white;
+    padding: 14px;
+    border-radius: 12px;
+    text-align: center;
+    font-weight: 800;
+    margin-bottom: 12px;
+    font-size: 17px;
+  }
+</style>
+</head>
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1>📚 문제읽고 랜덤 빙고 게임</h1>
+    <p>선생님이 문제를 내고 → 학생은 빙고판에서 정답 그림을 클릭! &nbsp;·&nbsp;<a href="/" style="color:white;opacity:0.85;font-size:13px;text-decoration:none;border:1px solid rgba(255,255,255,0.4);padding:3px 10px;border-radius:100px;">🏠 게임 선택</a> <span id="roomLabel"></span></p>
+  </div>
+
+  <!-- ============ 역할 선택 화면 ============ -->
+  <div id="screen-role" class="card">
+    <h2 style="text-align:center; font-size:22px; margin-bottom:6px;">어떻게 입장하시겠어요?</h2>
+    <p class="small" style="text-align:center;">방 ID: <strong id="roomIdLabel">기본방</strong></p>
+    <div class="role-grid">
+      <button class="role-btn" id="btnTeacher">
+        <div class="ico">👨‍🏫</div>
+        <div class="lbl">선생님</div>
+        <div class="sub">문제 출제 / 게임 진행</div>
+      </button>
+      <button class="role-btn" id="btnStudent">
+        <div class="ico">🎓</div>
+        <div class="lbl">학생</div>
+        <div class="sub">빙고판으로 참여</div>
+      </button>
+    </div>
+    <p id="teacherLockMsg" class="small hidden" style="text-align:center; margin-top:14px; color:#dc2626; font-weight:700;">🔒 선생님이 이미 입장 중입니다</p>
+  </div>
+
+  <!-- ============ 선생님 비밀번호 ============ -->
+  <div id="screen-tpass" class="card hidden" style="max-width:420px; margin-left:auto; margin-right:auto;">
+    <h2 style="text-align:center; font-size:20px; margin-bottom:14px;">👨‍🏫 선생님 입장</h2>
+    <input type="password" id="tpassInput" placeholder="선생님 비밀번호" autocomplete="off">
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn btn-secondary" id="tpassBack" style="flex:1;">← 뒤로</button>
+      <button class="btn btn-primary" id="tpassOk" style="flex:1;">입장</button>
+    </div>
+    <p class="small" style="text-align:center; margin-top:10px;">기본 비밀번호: 123456</p>
+  </div>
+
+  <!-- ============ 학생 닉네임 ============ -->
+  <div id="screen-sname" class="card hidden" style="max-width:420px; margin-left:auto; margin-right:auto;">
+    <h2 style="text-align:center; font-size:20px; margin-bottom:14px;">🎓 학생 입장</h2>
+    <input type="text" id="snameInput" placeholder="닉네임을 입력하세요" maxlength="12">
+    <div style="display:flex; gap:8px; margin-top:12px;">
+      <button class="btn btn-secondary" id="snameBack" style="flex:1;">← 뒤로</button>
+      <button class="btn btn-success" id="snameOk" style="flex:1;">입장</button>
+    </div>
+  </div>
+
+  <!-- ============ 선생님 화면 ============ -->
+  <div id="screen-teacher" class="hidden">
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div>
+          <div class="section-title">🔗 학생 입장 링크</div>
+          <div class="share-link">
+            <input type="text" id="shareLink" readonly>
+            <button class="btn btn-primary" id="copyLinkBtn" style="padding:8px 14px;">복사</button>
+          </div>
+        </div>
+        <div style="text-align:right;">
+          <button class="btn btn-danger" id="resetGameBtn">🗑 전체 초기화</button>
+          <button class="btn btn-secondary" id="logoutTeacherBtn" style="margin-left:6px;">로그아웃</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="teacher-grid">
+      <!-- 왼쪽 -->
+      <div class="stack">
+        <div class="card">
+          <div class="section-title">① 빙고판 크기 & 우승 조건</div>
+          <p class="small" style="margin-bottom:6px;">빙고판 크기</p>
+          <div class="size-options">
+            <button class="size-opt" data-size="3">3 × 3</button>
+            <button class="size-opt active" data-size="4">4 × 4</button>
+            <button class="size-opt" data-size="5">5 × 5</button>
+          </div>
+          <p class="small" style="margin:14px 0 6px;">🏆 몇 빙고를 달성하면 우승?</p>
+          <div style="display:flex; gap:10px; align-items:center; flex-wrap:wrap;">
+            <input type="number" id="bingoGoalInput" min="1" max="12" value="1"
+              style="width:90px; padding:10px 12px; border:2px solid #f59e0b; border-radius:11px; font-size:22px; font-weight:800; text-align:center; color:#b45309;">
+            <span style="font-size:15px; font-weight:700; color:#475569;">빙고 달성 시 우승</span>
+            <span class="small" style="color:#94a3b8;">(가로·세로·대각선 합산)</span>
+          </div>
+          <!-- 빠른 선택 칩 -->
+          <div style="display:flex; gap:6px; margin-top:8px; flex-wrap:wrap;">
+            <button class="goal-opt active" data-goal="1" type="button" style="flex:0 0 auto; padding:6px 14px; font-size:13px;">1빙고</button>
+            <button class="goal-opt" data-goal="2" type="button" style="flex:0 0 auto; padding:6px 14px; font-size:13px;">2빙고</button>
+            <button class="goal-opt" data-goal="3" type="button" style="flex:0 0 auto; padding:6px 14px; font-size:13px;">3빙고</button>
+            <button class="goal-opt" data-goal="5" type="button" style="flex:0 0 auto; padding:6px 14px; font-size:13px;">5빙고</button>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">② 정답 그림 업로드</div>
+          <p class="small" style="margin-bottom:10px;">파일명이 그대로 정답 단어가 됩니다 (예: 적외선센서.png)</p>
+          <label class="upload-zone" for="imgUpload">
+            <div class="ico">🖼️</div>
+            <div class="txt"><strong>그림 파일 선택</strong> (여러 장 가능)</div>
+            <div class="small" id="imgUploadStatus" style="margin-top:4px;"></div>
+          </label>
+          <input type="file" id="imgUpload" multiple accept="image/*" style="display:none;">
+          <div class="image-grid" id="imageGrid"></div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">③ 문제/정답 엑셀 업로드</div>
+          <p class="small" style="margin-bottom:10px;">A열: 정답(이미지 파일명) / B열: 문제(설명 텍스트) · 헤더 자동 인식</p>
+          <label class="upload-zone" for="excelUpload">
+            <div class="ico">📑</div>
+            <div class="txt"><strong>.xlsx, .xls, .csv 파일 선택</strong></div>
+            <div class="small" id="excelUploadStatus" style="margin-top:4px;"></div>
+          </label>
+          <input type="file" id="excelUpload" accept=".xlsx,.xls,.csv" style="display:none;">
+        </div>
+
+        <div class="card">
+          <div class="section-title">④ 게임 시작</div>
+          <button class="btn btn-success btn-lg" id="startGameBtn" style="width:100%;">🚀 게임 시작 (학생들에게 빙고판 생성)</button>
+          <p class="small" style="text-align:center; margin-top:8px;" id="startHint"></p>
+        </div>
+      </div>
+
+      <!-- 오른쪽 -->
+      <div class="stack">
+        <div class="card">
+          <div class="section-title">📋 문제 리스트 <span class="badge" id="qCountBadge">0</span></div>
+          <p class="small" style="margin-bottom:8px;">문제를 클릭하면 학생 화면에 표시됩니다</p>
+          <div class="question-list" id="questionList">
+            <p class="small" style="text-align:center; padding:30px;">엑셀 파일을 업로드해주세요</p>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="section-title">👥 참여 학생 <span class="badge" id="pCountBadge">0</span></div>
+          <div class="participants" id="participantsList">
+            <p class="small">아직 참여한 학생이 없어요</p>
+          </div>
+        </div>
+
+        <div class="card hidden" id="winnerCard">
+          <div class="winner-banner">
+            🏆 우승: <span id="winnerName"></span>
+          </div>
+          <button class="btn btn-warn" id="nextRoundBtn" style="width:100%;">다음 라운드 (빙고 초기화)</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ============ 학생 화면 ============ -->
+  <div id="screen-student" class="hidden">
+    <div class="student-layout">
+      <!-- 왼쪽: 정보 + 문제 -->
+      <div class="student-left">
+        <div class="card student-info-card">
+          <div class="info-row">
+            <div>
+              <div class="small">닉네임</div>
+              <div style="font-size:16px; font-weight:800;" id="myNameLabel"></div>
+            </div>
+            <button class="btn btn-secondary" id="logoutStudentBtn" style="padding:7px 12px; font-size:12px;">나가기</button>
+          </div>
+          <div class="info-row" style="margin-top:8px;">
+            <div>
+              <div class="small">상태</div>
+              <div style="font-weight:800; font-size:14px;" id="myStatusLabel">대기 중</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="question-panel">
+          <div class="label">📌 출제된 문제</div>
+          <div id="studentQNum" class="qnum hidden">문제 #</div>
+          <div id="studentQText" class="qtext"></div>
+          <div id="studentQEmpty" class="empty">아직 출제된 문제가 없습니다.<br>선생님을 기다려주세요!</div>
+        </div>
+      </div>
+
+      <!-- 오른쪽: 빙고판 -->
+      <div>
+        <div id="studentBoardWrap" class="card" style="padding:14px;">
+          <p class="small" style="text-align:center; padding:30px;" id="boardWaitMsg">선생님이 게임을 시작하면 빙고판이 나타납니다</p>
+          <div class="bingo-board" id="bingoBoard"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 빙고 축하 오버레이 -->
+<div class="celebrate" id="celebrate">
+  <div class="celebrate-box">
+    <h1>🎉 빙고! 🎉</h1>
+    <p id="celebrateMsg">축하합니다!</p>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script type="module">
+import { firebaseConfig } from './firebase_config.js';
+import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+import {
+  getDatabase, ref, set, get, update, onValue, onDisconnect, push, remove, off, child, serverTimestamp
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+import {
+  getStorage, ref as sRef, uploadBytes, getDownloadURL, deleteObject, listAll
+} from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+
+// ============ 초기화 ============
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+const storage = getStorage(app);
+
+const T_PASS = "123456";
+const urlParams = new URLSearchParams(location.search);
+const roomId = urlParams.get('room') || 'default';
+const roomPath = `quiz_rooms/${roomId}`;
+const roomRef = ref(db, roomPath);
+
+document.getElementById('roomIdLabel').textContent = roomId;
+document.getElementById('roomLabel').textContent = roomId !== 'default' ? `· 방: ${roomId}` : '';
+
+// ============ 유틸 ============
+const $ = (id) => document.getElementById(id);
+function show(id) { $(id).classList.remove('hidden'); }
+function hide(id) { $(id).classList.add('hidden'); }
+function toast(msg, type='') {
+  const t = $('toast');
+  t.textContent = msg;
+  t.className = 'toast show ' + type;
+  setTimeout(() => t.className = 'toast', 2400);
+}
+function uid() { return Math.random().toString(36).slice(2, 10); }
+const myId = sessionStorage.getItem('myId') || (() => {
+  const id = uid();
+  sessionStorage.setItem('myId', id);
+  return id;
+})();
+
+// ============ 상태 ============
+let role = null; // 'teacher' | 'student'
+let myName = '';
+let teacherSelectedSize = 4;
+let teacherSelectedGoal = 1;
+let teacherImages = {}; // imgId -> { name, url, path }
+let teacherQuestions = {}; // qId -> { question, answer, order, called, answerImageId }
+let teacherCurrentQId = null;
+let studentBoard = []; // [{imageId, name, url, marked}, ...]
+let studentBingo = false;
+
+// ============ 화면 분기 ============
+const teacherFlagRef = ref(db, `${roomPath}/teacherOnline`);
+
+function refreshRoleAvailability() {
+  get(teacherFlagRef).then(snap => {
+    if (snap.exists() && snap.val() === true) {
+      $('btnTeacher').disabled = true;
+      $('teacherLockMsg').classList.remove('hidden');
+    } else {
+      $('btnTeacher').disabled = false;
+      $('teacherLockMsg').classList.add('hidden');
+    }
+  });
+}
+refreshRoleAvailability();
+onValue(teacherFlagRef, refreshRoleAvailability);
+
+$('btnTeacher').onclick = () => { hide('screen-role'); show('screen-tpass'); $('tpassInput').focus(); };
+$('btnStudent').onclick = () => { hide('screen-role'); show('screen-sname'); $('snameInput').focus(); };
+$('tpassBack').onclick = () => { hide('screen-tpass'); show('screen-role'); };
+$('snameBack').onclick = () => { hide('screen-sname'); show('screen-role'); };
+
+$('tpassOk').onclick = enterTeacher;
+$('tpassInput').addEventListener('keydown', e => { if (e.key === 'Enter') enterTeacher(); });
+$('snameOk').onclick = enterStudent;
+$('snameInput').addEventListener('keydown', e => { if (e.key === 'Enter') enterStudent(); });
+
+// ============ 선생님 입장 ============
+async function enterTeacher() {
+  const pw = $('tpassInput').value.trim();
+  if (pw !== T_PASS) { toast('비밀번호가 다릅니다', 'error'); return; }
+  // 잠금 확인
+  const snap = await get(teacherFlagRef);
+  if (snap.exists() && snap.val() === true) {
+    toast('이미 다른 선생님이 입장 중입니다', 'error');
+    refreshRoleAvailability();
+    return;
+  }
+  // 잠금 설정 + 자동 해제
+  await update(roomRef, { teacherOnline: true, teacherActive: true, teacherId: myId });
+  onDisconnect(teacherFlagRef).set(false);
+  role = 'teacher';
+  hide('screen-tpass'); show('screen-teacher');
+  initTeacherUI();
+  attachTeacherListeners();
+}
+
+$('logoutTeacherBtn').onclick = async () => {
+  await update(roomRef, { teacherOnline: false });
+  location.reload();
+};
+
+// ============ 학생 입장 ============
+async function enterStudent() {
+  const name = $('snameInput').value.trim();
+  if (!name) { toast('닉네임을 입력해주세요', 'error'); return; }
+  myName = name;
+  role = 'student';
+  hide('screen-sname'); show('screen-student');
+  document.body.classList.add('student-mode');
+  $('myNameLabel').textContent = name;
+  // 참여자 등록
+  const pRef = ref(db, `${roomPath}/participants/${myId}`);
+  await set(pRef, { name, online: true, board: null, bingo: false, joinedAt: Date.now() });
+  onDisconnect(pRef).update({ online: false });
+  attachStudentListeners();
+}
+
+$('logoutStudentBtn').onclick = async () => {
+  await remove(ref(db, `${roomPath}/participants/${myId}`));
+  location.reload();
+};
+
+// ============ 선생님 UI 초기화 ============
+function initTeacherUI() {
+  // 공유 링크
+  const shareUrl = `${location.origin}${location.pathname}${roomId !== 'default' ? '?room=' + encodeURIComponent(roomId) : ''}`;
+  $('shareLink').value = shareUrl;
+  $('copyLinkBtn').onclick = () => {
+    $('shareLink').select();
+    navigator.clipboard.writeText(shareUrl).then(() => toast('링크 복사 완료!', 'success'));
+  };
+
+  // 빙고 크기
+  document.querySelectorAll('.size-opt').forEach(btn => {
+    btn.onclick = async () => {
+      document.querySelectorAll('.size-opt').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      teacherSelectedSize = parseInt(btn.dataset.size);
+      await update(roomRef, { size: teacherSelectedSize });
+    };
+  });
+  // 우승 빙고 수 — 숫자 입력 + 빠른 선택 칩
+  const goalInput = $('bingoGoalInput');
+
+  function syncGoalChips(value) {
+    document.querySelectorAll('.goal-opt').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.goal) === value);
+    });
+  }
+
+  async function setGoal(value) {
+    let v = parseInt(value);
+    if (isNaN(v) || v < 1) v = 1;
+    if (v > 12) v = 12;
+    teacherSelectedGoal = v;
+    goalInput.value = v;
+    syncGoalChips(v);
+    await update(roomRef, { bingoGoal: v });
+  }
+
+  goalInput.addEventListener('input', () => setGoal(goalInput.value));
+  goalInput.addEventListener('blur', () => setGoal(goalInput.value));
+
+  document.querySelectorAll('.goal-opt').forEach(btn => {
+    btn.onclick = () => setGoal(btn.dataset.goal);
+  });
+
+  // 이미지 업로드
+  $('imgUpload').addEventListener('change', handleImageUpload);
+  // 엑셀 업로드
+  $('excelUpload').addEventListener('change', handleExcelUpload);
+
+  $('startGameBtn').onclick = startGame;
+  $('resetGameBtn').onclick = resetGame;
+  $('nextRoundBtn').onclick = nextRound;
+
+  // 초기 size, bingoGoal 저장
+  update(roomRef, { size: teacherSelectedSize, bingoGoal: teacherSelectedGoal });
+}
+
+// ============ 이미지 업로드 ============
+async function handleImageUpload(e) {
+  const files = Array.from(e.target.files);
+  if (!files.length) return;
+  $('imgUploadStatus').textContent = `업로드 중... 0/${files.length}`;
+  let done = 0;
+  for (const f of files) {
+    try {
+      const nameNoExt = f.name.replace(/\.[^.]+$/, '');
+      const path = `quiz_rooms/${roomId}/images/${Date.now()}_${f.name}`;
+      const r = sRef(storage, path);
+      await uploadBytes(r, f);
+      const url = await getDownloadURL(r);
+      const imgId = push(ref(db, `${roomPath}/images`)).key;
+      await set(ref(db, `${roomPath}/images/${imgId}`), { name: nameNoExt, url, path });
+    } catch (err) {
+      console.error(err);
+      toast(`업로드 실패: ${f.name}`, 'error');
+    }
+    done++;
+    $('imgUploadStatus').textContent = `업로드 중... ${done}/${files.length}`;
+  }
+  $('imgUploadStatus').textContent = `${done}장 업로드 완료`;
+  e.target.value = '';
+  // 업로드 후 자동 매칭
+  setTimeout(rematchAnswers, 500);
+}
+
+// ============ 엑셀 업로드 ============
+function handleExcelUpload(e) {
+  const f = e.target.files[0];
+  if (!f) return;
+  const reader = new FileReader();
+  reader.onload = async (ev) => {
+    try {
+      const data = new Uint8Array(ev.target.result);
+      const wb = XLSX.read(data, { type: 'array' });
+      const ws = wb.Sheets[wb.SheetNames[0]];
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+      // 헤더 자동 건너뛰기 (A열=정답, B열=문제 또는 반대 모두 인식)
+      let start = 0;
+      if (rows.length > 0) {
+        const r0 = rows[0];
+        const c0 = String(r0[0] ?? '').trim();
+        const c1 = String(r0[1] ?? '').trim();
+        const headers = ['문제', '정답', '답', '질문', 'question', 'answer'];
+        if (headers.includes(c0.toLowerCase()) || headers.includes(c1.toLowerCase()) ||
+            headers.includes(c0) || headers.includes(c1)) start = 1;
+      }
+      // 기존 문제 삭제
+      await remove(ref(db, `${roomPath}/questions`));
+      await update(roomRef, { currentQuestionId: null });
+
+      let order = 0;
+      for (let i = start; i < rows.length; i++) {
+        const r = rows[i];
+        // A열 = 정답(이미지 파일명), B열 = 문제(설명 텍스트)
+        const a = String(r[0] ?? '').trim();
+        const q = String(r[1] ?? '').trim();
+        if (!q || !a) continue;
+        const qId = push(ref(db, `${roomPath}/questions`)).key;
+        await set(ref(db, `${roomPath}/questions/${qId}`), {
+          question: q, answer: a, order: order++, called: false, answerImageId: null
+        });
+      }
+      $('excelUploadStatus').textContent = `${order}개 문제 업로드 완료`;
+      toast(`${order}개 문제 업로드 완료!`, 'success');
+      setTimeout(rematchAnswers, 400);
+    } catch (err) {
+      console.error(err);
+      toast('엑셀 파싱 실패: ' + err.message, 'error');
+    }
+  };
+  reader.readAsArrayBuffer(f);
+  e.target.value = '';
+}
+
+// ============ 정답-그림 매칭 ============
+async function rematchAnswers() {
+  const updates = {};
+  for (const qId in teacherQuestions) {
+    const q = teacherQuestions[qId];
+    let matchedId = null;
+    for (const imgId in teacherImages) {
+      if (teacherImages[imgId].name === q.answer) { matchedId = imgId; break; }
+    }
+    if (q.answerImageId !== matchedId) {
+      updates[`questions/${qId}/answerImageId`] = matchedId;
+    }
+  }
+  if (Object.keys(updates).length) {
+    await update(roomRef, updates);
+  }
+}
+
+// ============ 선생님: 실시간 리스너 ============
+function attachTeacherListeners() {
+  // 이미지
+  onValue(ref(db, `${roomPath}/images`), snap => {
+    teacherImages = snap.val() || {};
+    renderImageGrid();
+  });
+  // 문제
+  onValue(ref(db, `${roomPath}/questions`), snap => {
+    teacherQuestions = snap.val() || {};
+    renderQuestionList();
+    rematchAnswers();
+    updateStartHint();
+  });
+  // 현재 문제
+  onValue(ref(db, `${roomPath}/currentQuestionId`), snap => {
+    teacherCurrentQId = snap.val();
+    renderQuestionList();
+  });
+  // 참여자
+  onValue(ref(db, `${roomPath}/participants`), snap => {
+    renderParticipants(snap.val() || {});
+  });
+  // 우승자
+  onValue(ref(db, `${roomPath}/winner`), snap => {
+    const w = snap.val();
+    if (w) {
+      $('winnerCard').classList.remove('hidden');
+      $('winnerName').textContent = w.name + (w.lines ? ` (${w.lines}빙고 달성!)` : '');
+    } else {
+      $('winnerCard').classList.add('hidden');
+    }
+  });
+}
+
+function renderImageGrid() {
+  const grid = $('imageGrid');
+  grid.innerHTML = '';
+  const ids = Object.keys(teacherImages);
+  if (!ids.length) {
+    grid.innerHTML = '<p class="small" style="grid-column:1/-1; text-align:center; padding:14px;">업로드된 그림이 없어요</p>';
+    return;
+  }
+  ids.forEach(id => {
+    const img = teacherImages[id];
+    const el = document.createElement('div');
+    el.className = 'img-card';
+    el.innerHTML = `
+      <img src="${img.url}" alt="${img.name}">
+      <div class="name">${img.name}</div>
+      <button class="del" data-id="${id}">×</button>
+    `;
+    el.querySelector('.del').onclick = async () => {
+      if (!confirm(`'${img.name}' 그림을 삭제할까요?`)) return;
+      try { await deleteObject(sRef(storage, img.path)); } catch(e) {}
+      await remove(ref(db, `${roomPath}/images/${id}`));
+    };
+    grid.appendChild(el);
+  });
+  $('imgUploadStatus').textContent = `현재 ${ids.length}장 등록됨`;
+}
+
+function renderQuestionList() {
+  const list = $('questionList');
+  list.innerHTML = '';
+  const arr = Object.entries(teacherQuestions).sort((a,b) => (a[1].order||0) - (b[1].order||0));
+  $('qCountBadge').textContent = arr.length;
+  if (!arr.length) {
+    list.innerHTML = '<p class="small" style="text-align:center; padding:30px;">엑셀 파일을 업로드해주세요</p>';
+    return;
+  }
+  arr.forEach(([qId, q], idx) => {
+    const matched = q.answerImageId && teacherImages[q.answerImageId];
+    const el = document.createElement('div');
+    el.className = 'q-item';
+    if (q.called) el.classList.add('called');
+    if (qId === teacherCurrentQId) el.classList.add('current');
+    el.innerHTML = `
+      <div class="num">${idx+1}</div>
+      <div class="text">
+        <div>${escapeHtml(q.question)}</div>
+        <div class="answer">정답: ${escapeHtml(q.answer)}</div>
+      </div>
+      <div class="match">${matched ? '✅' : '❌'}</div>
+    `;
+    el.onclick = () => callQuestion(qId);
+    list.appendChild(el);
+  });
+}
+
+function renderParticipants(parts) {
+  const wrap = $('participantsList');
+  const ids = Object.keys(parts);
+  $('pCountBadge').textContent = ids.length;
+  if (!ids.length) {
+    wrap.innerHTML = '<p class="small">아직 참여한 학생이 없어요</p>';
+    return;
+  }
+  wrap.innerHTML = '';
+  ids.forEach(id => {
+    const p = parts[id];
+    const chip = document.createElement('div');
+    chip.className = 'pchip' + (p.bingo ? ' bingo' : '');
+    chip.innerHTML = (p.online ? '<span class="dot"></span>' : '') + escapeHtml(p.name) + (p.bingo ? ' 🏆' : '');
+    wrap.appendChild(chip);
+  });
+}
+
+function updateStartHint() {
+  const qCount = Object.keys(teacherQuestions).length;
+  const matched = Object.values(teacherQuestions).filter(q => q.answerImageId).length;
+  const imgCount = Object.keys(teacherImages).length;
+  const need = teacherSelectedSize * teacherSelectedSize;
+  let hint = `문제 ${qCount}개 · 정답 매칭 ${matched}개 · 그림 ${imgCount}장 (빙고판 채우려면 최소 ${need}장 필요)`;
+  if (imgCount < need) hint += ' ⚠️';
+  $('startHint').textContent = hint;
+}
+
+async function callQuestion(qId) {
+  await update(roomRef, {
+    currentQuestionId: qId,
+    [`questions/${qId}/called`]: true
+  });
+  toast('문제 출제!', 'success');
+}
+
+async function startGame() {
+  const imgIds = Object.keys(teacherImages);
+  const need = teacherSelectedSize * teacherSelectedSize;
+  if (imgIds.length < need) {
+    toast(`그림이 ${need}장 이상 필요합니다 (현재 ${imgIds.length}장)`, 'error');
+    return;
+  }
+  if (!Object.keys(teacherQuestions).length) {
+    toast('문제를 먼저 업로드해주세요', 'error');
+    return;
+  }
+  // 참여자별 무작위 보드 생성
+  const partsSnap = await get(ref(db, `${roomPath}/participants`));
+  const parts = partsSnap.val() || {};
+  const updates = {};
+  for (const pid in parts) {
+    const board = generateRandomBoard(imgIds);
+    updates[`participants/${pid}/board`] = board;
+    updates[`participants/${pid}/bingo`] = false;
+  }
+  updates['gameStarted'] = true;
+  updates['winner'] = null;
+  updates['currentQuestionId'] = null;
+  // 모든 문제 called=false
+  for (const qId in teacherQuestions) {
+    updates[`questions/${qId}/called`] = false;
+  }
+  await update(roomRef, updates);
+  toast('게임 시작! 학생들에게 빙고판이 생성되었습니다', 'success');
+}
+
+function generateRandomBoard(imgIds) {
+  const need = teacherSelectedSize * teacherSelectedSize;
+  const pool = [...imgIds];
+  // 셔플
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  const picked = pool.slice(0, need);
+  return picked.map(id => ({
+    imageId: id,
+    name: teacherImages[id].name,
+    url: teacherImages[id].url,
+    marked: false
+  }));
+}
+
+async function resetGame() {
+  if (!confirm('정말 전체 초기화할까요? (참여자, 문제, 그림, 보드 모두 삭제)')) return;
+  // Storage에 있는 이미지도 정리
+  for (const id in teacherImages) {
+    try { await deleteObject(sRef(storage, teacherImages[id].path)); } catch(e) {}
+  }
+  await update(roomRef, {
+    participants: null, questions: null, images: null,
+    currentQuestionId: null, gameStarted: false, winner: null
+  });
+  toast('초기화 완료', 'success');
+}
+
+async function nextRound() {
+  const partsSnap = await get(ref(db, `${roomPath}/participants`));
+  const parts = partsSnap.val() || {};
+  const updates = { winner: null, currentQuestionId: null };
+  for (const pid in parts) {
+    updates[`participants/${pid}/bingo`] = false;
+    if (Object.keys(teacherImages).length >= teacherSelectedSize * teacherSelectedSize) {
+      updates[`participants/${pid}/board`] = generateRandomBoard(Object.keys(teacherImages));
+    }
+  }
+  for (const qId in teacherQuestions) {
+    updates[`questions/${qId}/called`] = false;
+  }
+  await update(roomRef, updates);
+  toast('다음 라운드 시작!', 'success');
+}
+
+// ============ 학생 리스너 ============
+let studentSize = 4;
+let studentBingoGoal = 1;
+let studentImages = {};
+let studentQuestions = {};
+let currentQId = null;
+let myParticipantData = null;
+
+function attachStudentListeners() {
+  onValue(ref(db, `${roomPath}/size`), s => {
+    studentSize = s.val() || 4;
+    renderBoard();
+  });
+  onValue(ref(db, `${roomPath}/bingoGoal`), s => {
+    studentBingoGoal = s.val() || 1;
+    updateStudentStatus();
+  });
+  onValue(ref(db, `${roomPath}/images`), s => {
+    studentImages = s.val() || {};
+  });
+  onValue(ref(db, `${roomPath}/questions`), s => {
+    studentQuestions = s.val() || {};
+  });
+  onValue(ref(db, `${roomPath}/currentQuestionId`), s => {
+    currentQId = s.val();
+    renderStudentQuestion();
+  });
+  onValue(ref(db, `${roomPath}/participants/${myId}`), s => {
+    myParticipantData = s.val();
+    if (myParticipantData) {
+      studentBoard = myParticipantData.board || [];
+      studentBingo = myParticipantData.bingo || false;
+      renderBoard();
+      updateStudentStatus();
+    }
+  });
+  onValue(ref(db, `${roomPath}/winner`), s => {
+    const w = s.val();
+    if (w) {
+      const linesText = w.lines ? ` (${w.lines}빙고 달성)` : '';
+      if (w.id === myId) {
+        showCelebrate(`🏆 ${w.name} 우승!${linesText}`);
+      }
+    } else {
+      $('celebrate').classList.remove('show');
+    }
+  });
+}
+
+function renderStudentQuestion() {
+  if (currentQId && studentQuestions[currentQId]) {
+    const q = studentQuestions[currentQId];
+    const order = (q.order ?? 0) + 1;
+    $('studentQNum').textContent = `문제 #${order}`;
+    $('studentQNum').classList.remove('hidden');
+    $('studentQText').textContent = q.question;
+    $('studentQEmpty').classList.add('hidden');
+  } else {
+    $('studentQNum').classList.add('hidden');
+    $('studentQText').textContent = '';
+    $('studentQEmpty').classList.remove('hidden');
+  }
+  requestAnimationFrame(fitQuestionText);
+}
+
+function renderBoard() {
+  const board = $('bingoBoard');
+  if (!studentBoard || !studentBoard.length) {
+    board.innerHTML = '';
+    board.style.width = '';
+    board.style.height = '';
+    $('boardWaitMsg').classList.remove('hidden');
+    return;
+  }
+  $('boardWaitMsg').classList.add('hidden');
+  board.style.gridTemplateColumns = `repeat(${studentSize}, 1fr)`;
+  board.style.gridTemplateRows = `repeat(${studentSize}, 1fr)`;
+  board.innerHTML = '';
+  studentBoard.forEach((cell, idx) => {
+    const el = document.createElement('div');
+    el.className = 'bingo-cell' + (cell.marked ? ' marked' : '');
+    el.innerHTML = `
+      <img src="${cell.url}" alt="${cell.name}">
+      <div class="word">${escapeHtml(cell.name || '')}</div>
+    `;
+    el.onclick = () => onCellClick(idx, el);
+    board.appendChild(el);
+  });
+  requestAnimationFrame(fitBoard);
+}
+
+function fitBoard() {
+  const board = $('bingoBoard');
+  const wrap = $('studentBoardWrap');
+  if (wrap && board.children.length) {
+    const cs = getComputedStyle(wrap);
+    const padX = parseFloat(cs.paddingLeft) + parseFloat(cs.paddingRight);
+    const padY = parseFloat(cs.paddingTop) + parseFloat(cs.paddingBottom);
+    const availW = wrap.clientWidth - padX;
+    const rect = wrap.getBoundingClientRect();
+    const availH = window.innerHeight - rect.top - padY - 16;
+    const size = Math.max(240, Math.min(availW, availH));
+    board.style.width = size + 'px';
+    board.style.height = size + 'px';
+  }
+  // 왼쪽 사이드바 높이를 화면 남은 공간에 맞춤
+  const sidebar = document.querySelector('.student-left');
+  if (sidebar) {
+    const rect = sidebar.getBoundingClientRect();
+    const availH = window.innerHeight - rect.top - 12;
+    sidebar.style.height = availH + 'px';
+  }
+  fitQuestionText();
+}
+
+function fitQuestionText() {
+  const panel = document.querySelector('.question-panel');
+  if (!panel) return;
+  const qtext = $('studentQText');
+  const qempty = $('studentQEmpty');
+  const target = (qtext.textContent && qtext.textContent.trim()) ? qtext : qempty;
+  if (!target) return;
+  // 최대 크기에서 시작 → 패널을 넘치면 1px씩 줄임
+  let fontSize = 30;
+  target.style.fontSize = fontSize + 'px';
+  target.style.lineHeight = '1.35';
+  let safety = 60;
+  while (panel.scrollHeight > panel.clientHeight + 1 && fontSize > 10 && safety-- > 0) {
+    fontSize -= 1;
+    target.style.fontSize = fontSize + 'px';
+  }
+}
+
+window.addEventListener('resize', fitBoard);
+window.addEventListener('orientationchange', () => setTimeout(fitBoard, 200));
+
+async function onCellClick(idx, el) {
+  if (studentBingo) return;
+  const cell = studentBoard[idx];
+  if (cell.marked) return;
+  if (!currentQId) { toast('아직 문제가 출제되지 않았어요', 'error'); return; }
+  const q = studentQuestions[currentQId];
+  if (!q) return;
+  if (q.answerImageId && cell.imageId === q.answerImageId) {
+    // 정답
+    studentBoard[idx].marked = true;
+    await update(ref(db, `${roomPath}/participants/${myId}`), { board: studentBoard });
+    const lines = countBingoLines(studentBoard, studentSize);
+    const goal = studentBingoGoal || 1;
+    if (lines > 0 && lines < goal) {
+      toast(`정답! ✓ 현재 ${lines}빙고 (목표 ${goal}빙고)`, 'success');
+    } else {
+      toast('정답! ✓', 'success');
+    }
+    updateStudentStatus();
+    if (lines >= goal) {
+      studentBingo = true;
+      // 첫 우승 등록 (트랜잭션 대용: get 후 set)
+      const winSnap = await get(ref(db, `${roomPath}/winner`));
+      if (!winSnap.exists() || winSnap.val() === null) {
+        await update(roomRef, {
+          winner: { name: myName, id: myId, time: Date.now(), lines },
+          [`participants/${myId}/bingo`]: true
+        });
+      } else {
+        await update(ref(db, `${roomPath}/participants/${myId}`), { bingo: true });
+      }
+    }
+  } else {
+    el.classList.add('shake');
+    setTimeout(() => el.classList.remove('shake'), 400);
+    toast('땡! ❌ 다시 생각해보세요', 'error');
+  }
+}
+
+function countBingoLines(board, size) {
+  const m = (r, c) => board[r * size + c].marked;
+  let count = 0;
+  // 가로
+  for (let r = 0; r < size; r++) {
+    let all = true;
+    for (let c = 0; c < size; c++) if (!m(r, c)) { all = false; break; }
+    if (all) count++;
+  }
+  // 세로
+  for (let c = 0; c < size; c++) {
+    let all = true;
+    for (let r = 0; r < size; r++) if (!m(r, c)) { all = false; break; }
+    if (all) count++;
+  }
+  // 대각선 ↘
+  let d1 = true; for (let i = 0; i < size; i++) if (!m(i, i)) { d1 = false; break; }
+  if (d1) count++;
+  // 대각선 ↙
+  let d2 = true; for (let i = 0; i < size; i++) if (!m(i, size - 1 - i)) { d2 = false; break; }
+  if (d2) count++;
+  return count;
+}
+
+function updateStudentStatus() {
+  const label = $('myStatusLabel');
+  if (!label) return;
+  if (studentBingo) {
+    label.innerHTML = `🏆 ${studentBingoGoal}빙고 달성!`;
+    return;
+  }
+  if (!studentBoard || !studentBoard.length) {
+    label.textContent = '대기 중';
+    return;
+  }
+  const lines = countBingoLines(studentBoard, studentSize);
+  label.innerHTML = `🎯 ${lines}빙고 / 목표 ${studentBingoGoal}빙고`;
+}
+
+function showCelebrate(msg) {
+  $('celebrateMsg').textContent = msg;
+  $('celebrate').classList.add('show');
+  spawnConfetti();
+  setTimeout(() => $('celebrate').classList.remove('show'), 6000);
+}
+
+function spawnConfetti() {
+  const colors = ['#fbbf24', '#10b981', '#6366f1', '#ef4444', '#ec4899', '#06b6d4'];
+  for (let i = 0; i < 80; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti';
+    c.style.left = Math.random() * 100 + '%';
+    c.style.background = colors[Math.floor(Math.random() * colors.length)];
+    c.style.animationDuration = (2 + Math.random() * 2.5) + 's';
+    c.style.animationDelay = Math.random() * 0.6 + 's';
+    c.style.transform = `rotate(${Math.random()*360}deg)`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 5000);
+  }
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+</script>
+</body>
+</html>

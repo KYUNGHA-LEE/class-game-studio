@@ -1,0 +1,1055 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>🧩 설명 빙고 게임 | Class Game Studio</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    font-family: 'Noto Sans KR', -apple-system, BlinkMacSystemFont, sans-serif;
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    min-height: 100vh;
+    color: #2d3748;
+    padding: 16px;
+    overflow-x: hidden;
+  }
+  .container { max-width: 1100px; margin: 0 auto; }
+
+  .header { text-align: center; color: white; margin-bottom: 24px; }
+  .header h1 { font-size: clamp(28px, 5vw, 44px); font-weight: 900; }
+  .header p { opacity: 0.9; margin-top: 6px; font-size: 14px; }
+
+  .card {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.18);
+    margin-bottom: 16px;
+  }
+
+  .btn {
+    border: none;
+    padding: 12px 22px;
+    border-radius: 12px;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-family: inherit;
+  }
+  .btn-primary { background: #f5576c; color: white; }
+  .btn-primary:hover:not(:disabled) { background: #e63757; transform: translateY(-2px); }
+  .btn-success { background: #48bb78; color: white; }
+  .btn-success:hover:not(:disabled) { background: #38a169; transform: translateY(-2px); }
+  .btn-danger { background: #f56565; color: white; }
+  .btn-secondary { background: #edf2f7; color: #4a5568; }
+  .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+  .input {
+    width: 100%;
+    padding: 14px 16px;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    font-size: 16px;
+    font-family: inherit;
+    transition: border 0.2s;
+  }
+  .input:focus { outline: none; border-color: #f5576c; }
+
+  textarea.input {
+    min-height: 80px;
+    resize: vertical;
+  }
+
+  .login-box { max-width: 480px; margin: 60px auto; text-align: center; }
+  .role-buttons { display: grid; gap: 16px; margin-top: 24px; }
+  .role-btn {
+    padding: 22px;
+    border: none;
+    border-radius: 16px;
+    font-size: 17px;
+    font-weight: 700;
+    cursor: pointer;
+    transition: all 0.2s;
+    color: white;
+    font-family: inherit;
+  }
+  .role-btn:hover:not(:disabled) { transform: translateY(-3px); box-shadow: 0 12px 24px rgba(0,0,0,0.15); }
+  .role-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+  .role-btn.teacher { background: linear-gradient(135deg, #f093fb, #f5576c); }
+  .role-btn.student { background: linear-gradient(135deg, #48bb78, #38a169); margin-top: 12px; width: 100%; }
+
+  .size-selector { display: flex; gap: 8px; flex-wrap: wrap; }
+  .size-btn {
+    padding: 10px 20px;
+    border: 2px solid #e2e8f0;
+    border-radius: 10px;
+    background: white;
+    cursor: pointer;
+    font-weight: 700;
+    font-family: inherit;
+    font-size: 15px;
+  }
+  .size-btn.active { background: #f5576c; color: white; border-color: #f5576c; }
+
+  .image-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(130px, 1fr));
+    gap: 12px;
+    margin-top: 16px;
+  }
+  .image-item {
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: all 0.2s;
+    position: relative;
+    background: white;
+  }
+  .image-item:hover { border-color: #f5576c; transform: translateY(-2px); }
+  .image-item.called { border-color: #48bb78; background: #f0fff4; }
+  .image-item.called::before {
+    content: '✓ 출제됨';
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: #48bb78;
+    color: white;
+    padding: 2px 8px;
+    border-radius: 100px;
+    font-size: 11px;
+    font-weight: 700;
+    z-index: 2;
+  }
+  .image-item img {
+    width: 100%;
+    height: 100px;
+    object-fit: cover;
+    display: block;
+    background: #f7fafc;
+  }
+  .image-item .label {
+    padding: 8px;
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    background: #f7fafc;
+    word-break: keep-all;
+  }
+  .image-item .delete {
+    position: absolute;
+    top: 4px;
+    right: 4px;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: rgba(245, 101, 101, 0.95);
+    color: white;
+    border: none;
+    cursor: pointer;
+    font-size: 16px;
+    z-index: 3;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 빙고판 - 이번엔 이미지가 들어감 */
+  .bingo-board {
+    display: grid;
+    gap: 8px;
+    width: 100%;
+    max-width: 540px;
+    margin: 24px auto;
+  }
+  .bingo-cell {
+    background: white;
+    border: 2px solid #e2e8f0;
+    border-radius: 12px;
+    aspect-ratio: 1;
+    cursor: pointer;
+    transition: all 0.2s;
+    overflow: hidden;
+    position: relative;
+    user-select: none;
+  }
+  .bingo-cell:hover:not(.marked) { border-color: #f5576c; transform: scale(1.02); }
+  .bingo-cell img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+  }
+  .bingo-cell .label-overlay {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    background: rgba(0,0,0,0.55);
+    color: white;
+    font-size: 11px;
+    text-align: center;
+    padding: 2px 4px;
+    font-weight: 700;
+  }
+  .bingo-cell.marked::after {
+    content: '✓';
+    position: absolute;
+    inset: 0;
+    background: rgba(72, 187, 120, 0.85);
+    color: white;
+    font-size: 56px;
+    font-weight: 900;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  /* 출제된 설명 배너 (학생 화면) */
+  .desc-banner {
+    background: linear-gradient(135deg, #fffbeb, #fef3c7);
+    border: 3px solid #f59e0b;
+    border-radius: 16px;
+    padding: 18px 22px;
+    margin-bottom: 16px;
+    box-shadow: 0 6px 20px rgba(245,158,11,0.25);
+  }
+  .desc-banner .label {
+    color: #b45309;
+    font-size: 13px;
+    font-weight: 700;
+    margin-bottom: 6px;
+    letter-spacing: 1px;
+  }
+  .desc-banner .text {
+    color: #78350f;
+    font-size: clamp(16px, 3.6vw, 22px);
+    font-weight: 700;
+    line-height: 1.5;
+    word-break: keep-all;
+  }
+  .desc-banner.empty {
+    background: #f7fafc;
+    border-color: #e2e8f0;
+    border-style: dashed;
+    text-align: center;
+  }
+  .desc-banner.empty .text {
+    color: #a0aec0;
+    font-size: 15px;
+    font-weight: 500;
+  }
+
+  .participants { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 12px; }
+  .participant-chip {
+    background: #edf2f7;
+    padding: 6px 14px;
+    border-radius: 100px;
+    font-size: 14px;
+    font-weight: 600;
+  }
+  .participant-chip.bingo { background: linear-gradient(135deg, #f6ad55, #ed8936); color: white; }
+
+  /* 설명 입력 모달 */
+  .modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.7);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1500;
+    padding: 16px;
+    animation: fadeIn 0.2s;
+  }
+  @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+  .modal {
+    background: white;
+    border-radius: 20px;
+    padding: 24px;
+    max-width: 480px;
+    width: 100%;
+    box-shadow: 0 30px 80px rgba(0,0,0,0.4);
+  }
+  .modal h3 { font-size: 18px; margin-bottom: 12px; }
+  .modal-preview {
+    text-align: center;
+    margin-bottom: 16px;
+  }
+  .modal-preview img {
+    max-width: 220px;
+    max-height: 160px;
+    border-radius: 12px;
+    border: 2px solid #e2e8f0;
+  }
+  .modal-preview .name {
+    font-weight: 700;
+    color: #f5576c;
+    margin-top: 8px;
+  }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+
+  .winner-overlay {
+    position: fixed;
+    inset: 0;
+    background: linear-gradient(135deg, rgba(240,147,251,0.97), rgba(245,87,108,0.97));
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+    color: white;
+    text-align: center;
+    animation: fadeIn 0.4s;
+    padding: 24px;
+  }
+  .winner-overlay .emoji { font-size: clamp(70px, 16vw, 200px); }
+  .winner-overlay h1 {
+    font-size: clamp(48px, 10vw, 110px);
+    font-weight: 900;
+    animation: bounce 0.8s infinite alternate;
+    margin: 8px 0;
+    letter-spacing: 6px;
+  }
+  @keyframes bounce {
+    from { transform: scale(1) rotate(-2deg); }
+    to { transform: scale(1.06) rotate(2deg); }
+  }
+  .winner-overlay .name {
+    font-size: clamp(24px, 5vw, 42px);
+    font-weight: 700;
+    margin-top: 12px;
+    background: rgba(255,255,255,0.2);
+    padding: 8px 24px;
+    border-radius: 100px;
+    backdrop-filter: blur(8px);
+  }
+  .confetti {
+    position: absolute;
+    width: 10px; height: 10px;
+    pointer-events: none;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    from { transform: translateY(-100vh) rotate(0); opacity: 1; }
+    to { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+  }
+
+  .share-box {
+    background: #edf2f7;
+    padding: 12px;
+    border-radius: 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    margin-top: 12px;
+    flex-wrap: wrap;
+  }
+  .share-box input { flex: 1; min-width: 200px; background: white; }
+
+  .status-banner {
+    text-align: center;
+    padding: 18px;
+    border-radius: 12px;
+    font-weight: 700;
+    margin-bottom: 16px;
+    background: linear-gradient(135deg, #fef5e7, #fed7aa);
+    color: #9c4221;
+  }
+
+  .toast {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #2d3748;
+    color: white;
+    padding: 12px 24px;
+    border-radius: 100px;
+    z-index: 3000;
+    font-weight: 600;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+  }
+
+  hr { border: none; border-top: 1px solid #e2e8f0; margin: 18px 0; }
+
+  .section-title {
+    font-size: 16px;
+    font-weight: 700;
+    margin-bottom: 12px;
+    color: #2d3748;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
+
+  .badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 100px;
+    font-size: 12px;
+    font-weight: 700;
+    background: #f5576c;
+    color: white;
+    margin-left: 6px;
+  }
+
+  .panel-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .panel-header h2 { font-size: 22px; }
+
+  .nav-link {
+    color: white;
+    text-decoration: none;
+    opacity: 0.9;
+    font-size: 13px;
+    border: 1px solid rgba(255,255,255,0.4);
+    padding: 4px 12px;
+    border-radius: 100px;
+  }
+  .nav-link:hover { opacity: 1; background: rgba(255,255,255,0.15); }
+
+  @media (max-width: 600px) {
+    body { padding: 8px; }
+    .card { padding: 16px; border-radius: 16px; }
+  }
+</style>
+</head>
+<body>
+<div class="container">
+  <div class="header">
+    <h1>🧩 설명 빙고 게임</h1>
+    <p>Class Game Studio
+      &nbsp;·&nbsp;<a href="/" class="nav-link">🏠 게임 선택</a>
+      &nbsp;<a href="/bingo_game.html" class="nav-link">🎯 그림 빙고</a>
+    </p>
+  </div>
+
+  <!-- 로그인 화면 -->
+  <div id="loginScreen" class="card login-box">
+    <h2 style="font-size: 22px; margin-bottom: 4px;">입장하기</h2>
+    <p style="color: #718096; font-size: 14px;">선생님은 그림을 설명하고, 학생은 설명을 듣고 그림을 맞춰요</p>
+    <div class="role-buttons">
+      <button id="teacherBtn" class="role-btn teacher">👨‍🏫 선생님으로 입장</button>
+      <div>
+        <input id="nicknameInput" class="input" placeholder="닉네임을 입력하세요 (10자 이내)" maxlength="10" />
+        <button id="studentBtn" class="role-btn student">🎒 학생으로 입장</button>
+      </div>
+    </div>
+    <p style="margin-top: 20px; color: #718096; font-size: 13px;">
+      방 ID: <strong id="roomIdDisplay">default</strong>
+    </p>
+  </div>
+
+  <!-- 선생님 패널 -->
+  <div id="teacherPanel" style="display: none;">
+    <div class="card">
+      <div class="panel-header">
+        <h2>👨‍🏫 선생님 화면</h2>
+        <button id="resetBtn" class="btn btn-danger">🔄 게임 초기화</button>
+      </div>
+      <hr>
+
+      <div class="section-title">1️⃣ 빙고 크기 선택</div>
+      <div class="size-selector">
+        <button class="size-btn" data-size="3">3 × 3</button>
+        <button class="size-btn active" data-size="4">4 × 4</button>
+        <button class="size-btn" data-size="5">5 × 5</button>
+      </div>
+
+      <hr>
+
+      <div class="section-title">2️⃣ 이미지 업로드 <span class="badge" id="imageCount">0</span></div>
+      <p style="color: #718096; font-size: 13px; margin-bottom: 12px;">
+        📁 학생들의 빙고판에 들어갈 그림들. 파일명이 정답 단어가 됩니다.
+      </p>
+      <input type="file" id="fileInput" accept="image/*" multiple style="display:none">
+      <button class="btn btn-primary" id="uploadBtn">📁 이미지 선택 (여러 개 가능)</button>
+      <div id="uploadProgress" style="margin-top: 10px; color: #4a5568; font-size: 14px;"></div>
+      <div class="image-grid" id="imageGrid"></div>
+
+      <hr>
+
+      <div class="section-title">3️⃣ 게임 시작</div>
+      <button class="btn btn-success" id="startBtn">🚀 빙고 보드 생성 & 게임 시작</button>
+      <p style="color: #718096; font-size: 12px; margin-top: 8px;">
+        시작 시 모든 학생 화면에 그림 빙고판이 무작위로 배치됩니다.
+      </p>
+
+      <hr>
+
+      <div class="section-title">4️⃣ 참여자 <span class="badge" id="participantCount">0</span></div>
+      <div class="participants" id="participantsList">
+        <span style="color: #718096; font-size: 14px;">아직 참여자가 없습니다.</span>
+      </div>
+
+      <hr>
+
+      <div class="section-title">5️⃣ 출제 (그림 클릭 → 설명 입력)</div>
+      <p style="color: #718096; font-size: 13px;">
+        위쪽 그림을 클릭하면 설명을 입력할 수 있어요. 학생은 설명만 보고 그림을 찾습니다.
+      </p>
+      <div id="currentDescriptionShow" style="margin-top: 12px;"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">📎 학생용 링크 공유</div>
+      <div class="share-box">
+        <input type="text" id="shareLink" class="input" readonly>
+        <button class="btn btn-primary" id="copyBtn">📋 복사</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 학생 패널 -->
+  <div id="studentPanel" style="display: none;">
+    <div class="card">
+      <div class="panel-header">
+        <h2>🎒 <span id="studentNameDisplay"></span></h2>
+        <button id="leaveBtn" class="btn btn-secondary">나가기</button>
+      </div>
+      <div id="studentStatus" class="status-banner">
+        ⏳ 선생님이 게임을 시작할 때까지 기다려 주세요...
+      </div>
+
+      <div class="desc-banner empty" id="descBanner">
+        <div class="label">📢 현재 출제</div>
+        <div class="text" id="descText">아직 출제된 문제가 없습니다.</div>
+      </div>
+
+      <div class="bingo-board" id="bingoBoard"></div>
+      <div style="text-align:center; color: #718096; font-size: 13px;">
+        💡 위 설명을 읽고 빙고판에서 알맞은 그림을 찾아 클릭하세요!
+      </div>
+    </div>
+  </div>
+
+  <!-- 출제 입력 모달 -->
+  <div id="askModal" class="modal-overlay" style="display: none;">
+    <div class="modal">
+      <h3>✍️ 이 그림을 어떻게 설명할까요?</h3>
+      <div class="modal-preview">
+        <img id="modalPreviewImg" src="" alt="">
+        <div class="name" id="modalPreviewName"></div>
+      </div>
+      <textarea id="descInput" class="input" placeholder="예: 이 부품은 빛을 감지해서 어두워지면 신호를 보냅니다." maxlength="200"></textarea>
+      <p style="color: #a0aec0; font-size: 12px; margin-top: 4px;">설명만 학생에게 전달되고, 그림은 보이지 않습니다.</p>
+      <div class="modal-actions">
+        <button class="btn btn-secondary" id="modalCancelBtn">취소</button>
+        <button class="btn btn-primary" id="modalSendBtn">📢 출제하기</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 우승자 오버레이 -->
+  <div id="winnerOverlay" class="winner-overlay" style="display: none;">
+    <div class="emoji">🎉</div>
+    <h1>BINGO!</h1>
+    <div class="name" id="winnerName"></div>
+    <button class="btn" style="margin-top: 32px; background: white; color: #f5576c;" id="closeWinnerBtn">닫기</button>
+  </div>
+
+  <div id="toast" class="toast" style="display:none"></div>
+</div>
+
+<script type="module">
+  import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+  import {
+    getDatabase, ref as dbRef, set, get, onValue, push, update, remove,
+    onDisconnect, child, serverTimestamp
+  } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-database.js';
+  import {
+    getStorage, ref as stRef, uploadBytes, getDownloadURL, deleteObject
+  } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js';
+  import { firebaseConfig } from './firebase_config.js';
+
+  const app = initializeApp(firebaseConfig);
+  const db = getDatabase(app);
+  const storage = getStorage(app);
+
+  const ROOM_ID = new URLSearchParams(location.search).get('room') || 'default';
+  document.getElementById('roomIdDisplay').textContent = ROOM_ID;
+  document.getElementById('shareLink').value = `${location.origin}${location.pathname}?room=${ROOM_ID}`;
+
+  // 그림 빙고와 데이터 충돌 안 나게 별도 경로 사용
+  const gameRef = dbRef(db, `desc_rooms/${ROOM_ID}`);
+
+  let role = null;
+  let myId = null;
+  let mySize = 4;
+  let myBoard = null;
+  let imagesCache = {};
+  let calledImagesCache = {};
+  let currentImageId = null;
+  let pendingImageId = null;
+
+  const $ = id => document.getElementById(id);
+  const showToast = (msg, ms = 2000) => {
+    const t = $('toast');
+    t.textContent = msg;
+    t.style.display = 'block';
+    clearTimeout(t._timer);
+    t._timer = setTimeout(() => t.style.display = 'none', ms);
+  };
+  const shuffle = arr => {
+    const a = [...arr];
+    for (let i = a.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [a[i], a[j]] = [a[j], a[i]];
+    }
+    return a;
+  };
+  const safeId = () => Math.random().toString(36).slice(2, 11) + Date.now().toString(36);
+  const escapeHtml = s => String(s).replace(/[&<>"']/g, c => (
+    { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]
+  ));
+
+  // 선생님 입장 잠금
+  onValue(child(gameRef, 'teacherOnline'), snap => {
+    if (role === 'teacher') return;
+    const occupied = snap.val() === true;
+    const btn = $('teacherBtn');
+    if (!btn) return;
+    btn.disabled = occupied;
+    btn.textContent = occupied ? '🔒 선생님이 이미 입장 중' : '👨‍🏫 선생님으로 입장';
+  });
+
+  $('teacherBtn').onclick = async () => {
+    const occSnap = await get(child(gameRef, 'teacherOnline'));
+    if (occSnap.val() === true) {
+      showToast('이미 선생님이 입장 중입니다');
+      return;
+    }
+    role = 'teacher';
+    myId = safeId();
+    $('teacherBtn').disabled = true;
+    $('teacherBtn').textContent = '✅ 로그인 됨';
+    await update(gameRef, {
+      teacherActive: true,
+      teacherId: myId,
+      teacherOnline: true
+    });
+    onDisconnect(child(gameRef, 'teacherOnline')).set(false);
+    showTeacherPanel();
+  };
+
+  $('studentBtn').onclick = async () => {
+    const name = $('nicknameInput').value.trim();
+    if (!name) { showToast('닉네임을 입력해 주세요'); return; }
+    role = 'student';
+    myId = safeId();
+    const myRef = child(gameRef, `participants/${myId}`);
+    await set(myRef, {
+      name, online: true, bingo: false, joinedAt: serverTimestamp()
+    });
+    onDisconnect(myRef).update({ online: false });
+    showStudentPanel(name);
+  };
+
+  $('nicknameInput').addEventListener('keydown', e => {
+    if (e.key === 'Enter') $('studentBtn').click();
+  });
+
+  // ========== 선생님 ==========
+  function showTeacherPanel() {
+    $('loginScreen').style.display = 'none';
+    $('teacherPanel').style.display = 'block';
+
+    onValue(child(gameRef, 'participants'), snap => {
+      const data = snap.val() || {};
+      const online = Object.entries(data).filter(([_, v]) => v.online);
+      $('participantCount').textContent = online.length;
+      const list = $('participantsList');
+      list.innerHTML = online.length === 0
+        ? '<span style="color: #718096; font-size: 14px;">아직 참여자가 없습니다.</span>'
+        : online.map(([id, v]) => `<span class="participant-chip ${v.bingo ? 'bingo' : ''}">${escapeHtml(v.name)}${v.bingo ? ' 🏆' : ''}</span>`).join('');
+    });
+
+    onValue(child(gameRef, 'images'), snap => {
+      imagesCache = snap.val() || {};
+      renderImageGrid();
+    });
+
+    onValue(child(gameRef, 'calledImages'), snap => {
+      calledImagesCache = snap.val() || {};
+      renderImageGrid();
+    });
+
+    onValue(child(gameRef, 'currentDescription'), snap => {
+      const v = snap.val();
+      const box = $('currentDescriptionShow');
+      if (v && v.description) {
+        const img = imagesCache[v.imageId];
+        const imgName = img ? img.name : '';
+        box.innerHTML = `
+          <div class="desc-banner">
+            <div class="label">📢 현재 출제 중 — ${escapeHtml(imgName)}</div>
+            <div class="text">${escapeHtml(v.description)}</div>
+          </div>
+        `;
+      } else {
+        box.innerHTML = '';
+      }
+    });
+
+    onValue(child(gameRef, 'winner'), snap => {
+      if (snap.exists() && snap.val()) showWinner(snap.val().name);
+    });
+
+    document.querySelectorAll('.size-btn').forEach(btn => {
+      btn.onclick = () => {
+        document.querySelectorAll('.size-btn').forEach(b => b.classList.remove('active'));
+        btn.classList.add('active');
+        mySize = parseInt(btn.dataset.size);
+      };
+    });
+
+    $('uploadBtn').onclick = () => $('fileInput').click();
+    $('fileInput').onchange = async e => {
+      const files = Array.from(e.target.files);
+      if (files.length === 0) return;
+      const progress = $('uploadProgress');
+      for (let i = 0; i < files.length; i++) {
+        const file = files[i];
+        const word = file.name.replace(/\.[^/.]+$/, '');
+        progress.textContent = `📤 업로드 중... (${i + 1}/${files.length}) ${word}`;
+        try {
+          const path = `desc_rooms/${ROOM_ID}/${Date.now()}_${i}_${file.name}`;
+          const r = stRef(storage, path);
+          await uploadBytes(r, file);
+          const url = await getDownloadURL(r);
+          await push(child(gameRef, 'images'), { name: word, url, path });
+        } catch (err) {
+          console.error(err);
+          showToast(`❌ 업로드 실패: ${word}`);
+        }
+      }
+      progress.textContent = `✅ ${files.length}개 업로드 완료`;
+      e.target.value = '';
+      setTimeout(() => progress.textContent = '', 3000);
+    };
+
+    $('startBtn').onclick = startGame;
+
+    $('resetBtn').onclick = async () => {
+      if (!confirm('정말 게임을 초기화하시겠어요?\n(참여자 보드, 출제 기록, 우승자 모두 삭제)')) return;
+      await update(gameRef, {
+        currentDescription: null,
+        winner: null,
+        gameStarted: false,
+        calledImages: null
+      });
+      const partsSnap = await get(child(gameRef, 'participants'));
+      const parts = partsSnap.val() || {};
+      const updates = {};
+      Object.keys(parts).forEach(pid => {
+        updates[`participants/${pid}/board`] = null;
+        updates[`participants/${pid}/bingo`] = false;
+      });
+      await update(gameRef, updates);
+      showToast('🔄 초기화 완료');
+    };
+
+    $('copyBtn').onclick = async () => {
+      try {
+        await navigator.clipboard.writeText($('shareLink').value);
+        showToast('📋 링크가 복사되었어요!');
+      } catch {
+        $('shareLink').select();
+        document.execCommand('copy');
+        showToast('📋 복사됨');
+      }
+    };
+
+    // 모달
+    $('modalCancelBtn').onclick = () => closeAskModal();
+    $('modalSendBtn').onclick = sendDescription;
+    $('descInput').addEventListener('keydown', e => {
+      if (e.key === 'Enter' && (e.ctrlKey || e.metaKey)) sendDescription();
+    });
+  }
+
+  function renderImageGrid() {
+    const grid = $('imageGrid');
+    const ids = Object.keys(imagesCache);
+    $('imageCount').textContent = ids.length;
+    grid.innerHTML = ids.map(id => {
+      const img = imagesCache[id];
+      const called = calledImagesCache[id] ? 'called' : '';
+      return `
+        <div class="image-item ${called}" data-id="${id}">
+          <button class="delete" data-del="${id}">×</button>
+          <img src="${img.url}" alt="">
+          <div class="label">${escapeHtml(img.name)}</div>
+        </div>
+      `;
+    }).join('');
+
+    grid.querySelectorAll('.image-item').forEach(item => {
+      item.onclick = e => {
+        if (e.target.classList.contains('delete')) return;
+        openAskModal(item.dataset.id);
+      };
+    });
+    grid.querySelectorAll('.delete').forEach(btn => {
+      btn.onclick = e => {
+        e.stopPropagation();
+        deleteImage(btn.dataset.del);
+      };
+    });
+  }
+
+  async function deleteImage(id) {
+    if (!confirm('이미지 삭제?')) return;
+    const img = imagesCache[id];
+    if (img?.path) {
+      try { await deleteObject(stRef(storage, img.path)); } catch (e) {}
+    }
+    await remove(child(gameRef, `images/${id}`));
+  }
+
+  function openAskModal(imageId) {
+    const img = imagesCache[imageId];
+    if (!img) return;
+    pendingImageId = imageId;
+    $('modalPreviewImg').src = img.url;
+    $('modalPreviewName').textContent = img.name;
+    $('descInput').value = '';
+    $('askModal').style.display = 'flex';
+    setTimeout(() => $('descInput').focus(), 50);
+  }
+
+  function closeAskModal() {
+    $('askModal').style.display = 'none';
+    pendingImageId = null;
+  }
+
+  async function sendDescription() {
+    const desc = $('descInput').value.trim();
+    if (!desc) { showToast('설명을 입력해 주세요'); return; }
+    if (!pendingImageId) { closeAskModal(); return; }
+    const img = imagesCache[pendingImageId];
+    await update(gameRef, {
+      [`calledImages/${pendingImageId}`]: true,
+      currentDescription: {
+        imageId: pendingImageId,
+        description: desc,
+        name: img.name,
+        timestamp: Date.now()
+      }
+    });
+    closeAskModal();
+    showToast('📢 학생들에게 출제됐어요!');
+  }
+
+  async function startGame() {
+    const imageIds = Object.keys(imagesCache);
+    const cellsNeeded = mySize * mySize;
+    if (imageIds.length < cellsNeeded) {
+      showToast(`❗ 최소 ${cellsNeeded}장의 이미지 필요 (현재 ${imageIds.length}장)`);
+      return;
+    }
+    const partsSnap = await get(child(gameRef, 'participants'));
+    const parts = partsSnap.val() || {};
+    const onlineIds = Object.keys(parts).filter(id => parts[id].online);
+    if (onlineIds.length === 0) {
+      if (!confirm('참여자가 없습니다. 그래도 시작할까요?')) return;
+    }
+    const updates = {
+      size: mySize,
+      gameStarted: true,
+      winner: null,
+      currentDescription: null,
+      calledImages: null
+    };
+    onlineIds.forEach(pid => {
+      const picks = shuffle(imageIds).slice(0, cellsNeeded);
+      const board = picks.map(iid => ({
+        imageId: iid,
+        name: imagesCache[iid].name,
+        url: imagesCache[iid].url,
+        marked: false
+      }));
+      updates[`participants/${pid}/board`] = board;
+      updates[`participants/${pid}/bingo`] = false;
+    });
+    await update(gameRef, updates);
+    showToast(`🚀 ${onlineIds.length}명에게 빙고판 생성 완료!`);
+  }
+
+  // ========== 학생 ==========
+  function showStudentPanel(name) {
+    $('loginScreen').style.display = 'none';
+    $('studentPanel').style.display = 'block';
+    $('studentNameDisplay').textContent = name + ' 님';
+
+    onValue(child(gameRef, `participants/${myId}/board`), snap => {
+      myBoard = snap.val();
+      renderBoard();
+      updateStatus();
+    });
+
+    onValue(child(gameRef, 'size'), snap => {
+      const sz = snap.val();
+      if (sz) mySize = sz;
+      renderBoard();
+    });
+
+    onValue(child(gameRef, 'gameStarted'), () => updateStatus());
+
+    onValue(child(gameRef, 'currentDescription'), snap => {
+      const v = snap.val();
+      const banner = $('descBanner');
+      const text = $('descText');
+      if (v && v.description) {
+        currentImageId = v.imageId;
+        banner.classList.remove('empty');
+        text.textContent = v.description;
+      } else {
+        currentImageId = null;
+        banner.classList.add('empty');
+        text.textContent = '아직 출제된 문제가 없습니다.';
+      }
+      renderBoard();
+    });
+
+    onValue(child(gameRef, 'calledImages'), snap => {
+      calledImagesCache = snap.val() || {};
+      renderBoard();
+    });
+
+    onValue(child(gameRef, 'winner'), snap => {
+      if (snap.exists() && snap.val()) showWinner(snap.val().name);
+    });
+
+    $('leaveBtn').onclick = async () => {
+      if (!confirm('정말 나가시겠어요?')) return;
+      await remove(child(gameRef, `participants/${myId}`));
+      location.reload();
+    };
+  }
+
+  async function updateStatus() {
+    const startedSnap = await get(child(gameRef, 'gameStarted'));
+    const started = startedSnap.val();
+    const banner = $('studentStatus');
+    if (started && myBoard && Array.isArray(myBoard)) {
+      banner.style.display = 'none';
+    } else if (started) {
+      banner.style.display = 'block';
+      banner.textContent = '⚠️ 게임은 시작됐지만 빙고판이 없습니다. 선생님이 다시 시작 버튼을 눌러야 해요.';
+    } else {
+      banner.style.display = 'block';
+      banner.textContent = '⏳ 선생님이 게임을 시작할 때까지 기다려 주세요...';
+    }
+  }
+
+  function renderBoard() {
+    const board = $('bingoBoard');
+    board.style.gridTemplateColumns = `repeat(${mySize}, 1fr)`;
+    if (!myBoard || !Array.isArray(myBoard)) {
+      board.innerHTML = '';
+      return;
+    }
+    board.innerHTML = myBoard.map((cell, idx) => {
+      const isMarked = cell.marked;
+      const cls = `bingo-cell${isMarked ? ' marked' : ''}`;
+      return `
+        <div class="${cls}" data-idx="${idx}">
+          <img src="${cell.url}" alt="">
+          <div class="label-overlay">${escapeHtml(cell.name)}</div>
+        </div>
+      `;
+    }).join('');
+    board.querySelectorAll('.bingo-cell').forEach(cell => {
+      cell.onclick = () => handleCellClick(parseInt(cell.dataset.idx));
+    });
+  }
+
+  async function handleCellClick(idx) {
+    if (!myBoard) return;
+    const cell = myBoard[idx];
+    if (cell.marked) return;
+
+    const winnerSnap = await get(child(gameRef, 'winner'));
+    if (winnerSnap.exists() && winnerSnap.val()) {
+      showToast('이미 빙고를 외친 친구가 있어요!');
+      return;
+    }
+    if (!calledImagesCache[cell.imageId]) {
+      showToast('아직 출제 안 된 그림이에요!');
+      return;
+    }
+
+    myBoard[idx] = { ...cell, marked: true };
+    await update(child(gameRef, `participants/${myId}`), { board: myBoard });
+
+    if (checkBingo(myBoard, mySize)) {
+      await update(child(gameRef, `participants/${myId}`), { bingo: true });
+      const winnerSnap2 = await get(child(gameRef, 'winner'));
+      if (!winnerSnap2.exists() || !winnerSnap2.val()) {
+        const meSnap = await get(child(gameRef, `participants/${myId}/name`));
+        await update(gameRef, {
+          winner: { name: meSnap.val(), id: myId, time: Date.now() }
+        });
+      }
+    }
+  }
+
+  function checkBingo(board, size) {
+    if (!board) return false;
+    for (let r = 0; r < size; r++) {
+      let all = true;
+      for (let c = 0; c < size; c++) if (!board[r * size + c].marked) { all = false; break; }
+      if (all) return true;
+    }
+    for (let c = 0; c < size; c++) {
+      let all = true;
+      for (let r = 0; r < size; r++) if (!board[r * size + c].marked) { all = false; break; }
+      if (all) return true;
+    }
+    let d1 = true;
+    for (let i = 0; i < size; i++) if (!board[i * size + i].marked) { d1 = false; break; }
+    if (d1) return true;
+    let d2 = true;
+    for (let i = 0; i < size; i++) if (!board[i * size + (size - 1 - i)].marked) { d2 = false; break; }
+    if (d2) return true;
+    return false;
+  }
+
+  function showWinner(name) {
+    $('winnerName').textContent = `🏆 ${name} 🏆`;
+    const ov = $('winnerOverlay');
+    ov.style.display = 'flex';
+    spawnConfetti();
+  }
+
+  function spawnConfetti() {
+    const ov = $('winnerOverlay');
+    const colors = ['#f6ad55', '#fbd38d', '#48bb78', '#ed8936', '#fff'];
+    for (let i = 0; i < 60; i++) {
+      const c = document.createElement('div');
+      c.className = 'confetti';
+      c.style.background = colors[Math.floor(Math.random() * colors.length)];
+      c.style.left = Math.random() * 100 + 'vw';
+      c.style.animationDuration = (2 + Math.random() * 2) + 's';
+      c.style.animationDelay = Math.random() * 1 + 's';
+      ov.appendChild(c);
+      setTimeout(() => c.remove(), 4500);
+    }
+  }
+
+  $('closeWinnerBtn').onclick = () => {
+    $('winnerOverlay').style.display = 'none';
+  };
+</script>
+</body>
+</html>
